@@ -17,32 +17,92 @@ create table if not exists public.messages (
 alter table public.profiles enable row level security;
 alter table public.messages enable row level security;
 
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true)
+on conflict (id) do nothing;
+
+drop policy if exists "Public profiles are readable" on public.profiles;
 create policy "Public profiles are readable"
 on public.profiles for select
 to authenticated
 using (true);
 
+drop policy if exists "Users can insert their own profile" on public.profiles;
 create policy "Users can insert their own profile"
 on public.profiles for insert
 to authenticated
 with check (auth.uid() = id);
 
+drop policy if exists "Users can update their own profile" on public.profiles;
 create policy "Users can update their own profile"
 on public.profiles for update
 to authenticated
 using (auth.uid() = id)
 with check (auth.uid() = id);
 
+drop policy if exists "Messages are readable by authenticated users" on public.messages;
 create policy "Messages are readable by authenticated users"
 on public.messages for select
 to authenticated
 using (true);
 
+drop policy if exists "Users can insert their own messages" on public.messages;
 create policy "Users can insert their own messages"
 on public.messages for insert
 to authenticated
 with check (auth.uid() = user_id);
 
+drop policy if exists "Avatar images are publicly readable" on storage.objects;
+create policy "Avatar images are publicly readable"
+on storage.objects for select
+to public
+using (bucket_id = 'avatars');
+
+drop policy if exists "Users can upload their own avatar objects" on storage.objects;
+create policy "Users can upload their own avatar objects"
+on storage.objects for insert
+to authenticated
+with check (
+  bucket_id = 'avatars'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+drop policy if exists "Users can update their own avatar objects" on storage.objects;
+create policy "Users can update their own avatar objects"
+on storage.objects for update
+to authenticated
+using (
+  bucket_id = 'avatars'
+  and (storage.foldername(name))[1] = auth.uid()::text
+)
+with check (
+  bucket_id = 'avatars'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
 -- Realtime subscriptions:
-alter publication supabase_realtime add table public.profiles;
-alter publication supabase_realtime add table public.messages;
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'profiles'
+  ) then
+    alter publication supabase_realtime add table public.profiles;
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'messages'
+  ) then
+    alter publication supabase_realtime add table public.messages;
+  end if;
+end $$;

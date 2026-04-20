@@ -15,7 +15,17 @@ function AuthPage() {
     setMessage('')
     setLoading(true)
 
-    const payload = { email, password }
+    const emailRedirectTo =
+      typeof window !== 'undefined' ? `${window.location.origin}/` : undefined
+    const payload = isSignUp
+      ? {
+          email,
+          password,
+          options: {
+            emailRedirectTo,
+          },
+        }
+      : { email, password }
     const result = isSignUp
       ? await supabase.auth.signUp(payload)
       : await supabase.auth.signInWithPassword(payload)
