@@ -17,57 +17,41 @@ create table if not exists public.messages (
 alter table public.profiles enable row level security;
 alter table public.messages enable row level security;
 
-<<<<<<< HEAD
 insert into storage.buckets (id, name, public)
 values ('avatars', 'avatars', true)
 on conflict (id) do nothing;
 
 drop policy if exists "Public profiles are readable" on public.profiles;
-=======
->>>>>>> a95769c (first commit)
 create policy "Public profiles are readable"
 on public.profiles for select
 to authenticated
 using (true);
 
-<<<<<<< HEAD
 drop policy if exists "Users can insert their own profile" on public.profiles;
-=======
->>>>>>> a95769c (first commit)
 create policy "Users can insert their own profile"
 on public.profiles for insert
 to authenticated
 with check (auth.uid() = id);
 
-<<<<<<< HEAD
 drop policy if exists "Users can update their own profile" on public.profiles;
-=======
->>>>>>> a95769c (first commit)
 create policy "Users can update their own profile"
 on public.profiles for update
 to authenticated
 using (auth.uid() = id)
 with check (auth.uid() = id);
 
-<<<<<<< HEAD
 drop policy if exists "Messages are readable by authenticated users" on public.messages;
-=======
->>>>>>> a95769c (first commit)
 create policy "Messages are readable by authenticated users"
 on public.messages for select
 to authenticated
 using (true);
 
-<<<<<<< HEAD
 drop policy if exists "Users can insert their own messages" on public.messages;
-=======
->>>>>>> a95769c (first commit)
 create policy "Users can insert their own messages"
 on public.messages for insert
 to authenticated
 with check (auth.uid() = user_id);
 
-<<<<<<< HEAD
 drop policy if exists "Avatar images are publicly readable" on storage.objects;
 create policy "Avatar images are publicly readable"
 on storage.objects for select
@@ -122,8 +106,3 @@ begin
     alter publication supabase_realtime add table public.messages;
   end if;
 end $$;
-=======
--- Realtime subscriptions:
-alter publication supabase_realtime add table public.profiles;
-alter publication supabase_realtime add table public.messages;
->>>>>>> a95769c (first commit)
