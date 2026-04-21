@@ -88,11 +88,14 @@ function DashboardPage({ session }) {
       return
     }
 
-    const { error: pushError } = await supabase.functions.invoke('send-push', {
+    const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push', {
       body: { content },
     })
     if (pushError) {
+      console.error('send-push error', pushError)
       setError(pushError.message)
+    } else {
+      console.log('send-push ok', pushData)
     }
   }
 
