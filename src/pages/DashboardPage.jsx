@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import ChatWindow from '../components/ChatWindow'
 import ProfileSetupModal from '../components/ProfileSetupModal'
 import UserList from '../components/UserList'
+import { registerPushForUser } from '../lib/pushNotifications'
 import { supabase } from '../lib/supabase'
 
 function DashboardPage({ session }) {
@@ -11,6 +12,7 @@ function DashboardPage({ session }) {
   const [showProfileSetup, setShowProfileSetup] = useState(false)
   const [onlineUserIds, setOnlineUserIds] = useState(new Set())
   const [error, setError] = useState('')
+  const [pushStatus, setPushStatus] = useState('')
 
   const profilesById = useMemo(
     () => new Map(profiles.map((profile) => [profile.id, profile])),
@@ -81,7 +83,35 @@ function DashboardPage({ session }) {
       user_id: currentUserId,
       content,
     })
-    if (insertError) setError(insertError.message)
+    if (insertError) {
+      setError(insertError.message)
+      return
+    }
+
+    const { error: pushError } = await supabase.functions.invoke('send-push', {
+      body: { content },
+    })
+    if (pushError) {
+      setError(pushError.message)
+    }
+  }
+
+  const handleEnableNotifications = async () => {
+    setPushStatus('')
+    try {
+      await registerPushForUser(currentUserId)
+      if (Notification.permission === 'granted') {
+        setPushStatus('Notifications enabled on this device.')
+      } else {
+        setPushStatus('Notifications permission was not granted.')
+      }
+    } catch (pushRegistrationError) {
+      const message =
+        pushRegistrationError instanceof Error
+          ? pushRegistrationError.message
+          : 'Failed to enable notifications.'
+      setPushStatus(message)
+    }
   }
 
   const onProfileSaved = async () => {
@@ -100,12 +130,18 @@ function DashboardPage({ session }) {
           <h1>Friends Chat</h1>
           <p className="muted">Realtime room for your group.</p>
         </div>
-        <button type="button" onClick={() => supabase.auth.signOut()}>
-          Sign out
-        </button>
+        <div>
+          <button type="button" onClick={handleEnableNotifications}>
+            Enable notifications
+          </button>
+          <button type="button" onClick={() => supabase.auth.signOut()}>
+            Sign out
+          </button>
+        </div>
       </header>
 
       {error && <p className="error banner">{error}</p>}
+      {pushStatus && <p className="muted">{pushStatus}</p>}
 
       <section className="dashboard-grid">
         <UserList profiles={profiles} onlineUserIds={onlineUserIds} currentUserId={currentUserId} />
