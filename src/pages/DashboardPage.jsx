@@ -91,13 +91,17 @@ function DashboardPage({ session }) {
     const {
       data: { session: activeSession },
     } = await supabase.auth.getSession()
-    const authHeaders = activeSession?.access_token
-      ? { Authorization: `Bearer ${activeSession.access_token}` }
-      : undefined
+    const accessToken = activeSession?.access_token || session?.access_token
+    if (!accessToken) {
+      setError('Your session expired. Please sign in again.')
+      return
+    }
+
+    supabase.functions.setAuth(accessToken)
 
     const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push', {
       body: { content },
-      headers: authHeaders,
+      headers: { Authorization: `Bearer ${accessToken}` },
     })
     if (pushError) {
       console.error('send-push error', pushError)
