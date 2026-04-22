@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import ChatWindow from '../components/ChatWindow'
 import ProfileSetupModal from '../components/ProfileSetupModal'
 import UserList from '../components/UserList'
@@ -12,9 +12,11 @@ function DashboardPage({ session }) {
   const [showProfileSetup, setShowProfileSetup] = useState(false)
   const [onlineUserIds, setOnlineUserIds] = useState(new Set())
   const [error, setError] = useState('')
+  const [realtimeStatus, setRealtimeStatus] = useState('')
   const [pushStatus, setPushStatus] = useState('')
   const [hasAutoPushAttempted, setHasAutoPushAttempted] = useState(false)
   const [showParticipantsOnMobile, setShowParticipantsOnMobile] = useState(false)
+  const channelRef = useRef(null)
 
   const profilesById = useMemo(
     () => new Map(profiles.map((profile) => [profile.id, profile])),
@@ -42,57 +44,98 @@ function DashboardPage({ session }) {
   }, [currentUserId])
 
   useEffect(() => {
-    const channel = supabase
-      .channel('dashboard-live', {
-        config: {
-          presence: {
-            key: currentUserId,
+    let isActive = true
+    let reconnectTimer = null
+    let reconnectAttempts = 0
+    const maxReconnectAttempts = 4
+
+    const cleanupChannel = () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+        channelRef.current = null
+      }
+    }
+
+    const connectRealtime = () => {
+      if (!isActive) return
+
+      cleanupChannel()
+      setRealtimeStatus('')
+
+      const channel = supabase
+        .channel('dashboard-live', {
+          config: {
+            presence: {
+              key: currentUserId,
+            },
           },
-        },
-      })
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'profiles' },
-        async () => {
-          const { data } = await supabase
-            .from('profiles')
-            .select('*')
-            .order('created_at', { ascending: true })
-          if (data) setProfiles(data)
-        },
-      )
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        (payload) => {
-          setMessages((current) => [...current, payload.new])
-        },
-      )
-      .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState()
-        const nextOnline = new Set()
-        Object.values(state).forEach((presences) => {
-          presences.forEach((presence) => {
-            if (typeof presence?.user_id === 'string') {
-              nextOnline.add(presence.user_id)
-            }
-          })
         })
-        setOnlineUserIds(nextOnline)
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await channel.track({
-            user_id: currentUserId,
-            online_at: new Date().toISOString(),
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'profiles' },
+          async () => {
+            const { data } = await supabase
+              .from('profiles')
+              .select('*')
+              .order('created_at', { ascending: true })
+            if (data) setProfiles(data)
+          },
+        )
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'messages' },
+          (payload) => {
+            setMessages((current) => [...current, payload.new])
+          },
+        )
+        .on('presence', { event: 'sync' }, () => {
+          const state = channel.presenceState()
+          const nextOnline = new Set()
+          Object.values(state).forEach((presences) => {
+            presences.forEach((presence) => {
+              if (typeof presence?.user_id === 'string') {
+                nextOnline.add(presence.user_id)
+              }
+            })
           })
-        } else if (status === 'CHANNEL_ERROR') {
-          setError('לא הצלחנו להתחבר לסטטוס אונליין בזמן אמת.')
-        }
-      })
+          setOnlineUserIds(nextOnline)
+        })
+        .subscribe(async (status) => {
+          if (!isActive) return
+
+          if (status === 'SUBSCRIBED') {
+            reconnectAttempts = 0
+            setRealtimeStatus('')
+            await channel.track({
+              user_id: currentUserId,
+              online_at: new Date().toISOString(),
+            })
+            return
+          }
+
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            if (reconnectAttempts < maxReconnectAttempts) {
+              const delayMs = Math.min(1000 * 2 ** reconnectAttempts, 10000)
+              reconnectAttempts += 1
+              setRealtimeStatus('החיבור לאונליין נותק זמנית, מנסים להתחבר מחדש...')
+              reconnectTimer = window.setTimeout(() => {
+                connectRealtime()
+              }, delayMs)
+            } else {
+              setRealtimeStatus('האונליין לא זמין כרגע. נסו לרענן את העמוד אם זה ממשיך.')
+            }
+          }
+        })
+
+      channelRef.current = channel
+    }
+
+    connectRealtime()
 
     return () => {
-      supabase.removeChannel(channel)
+      isActive = false
+      if (reconnectTimer) window.clearTimeout(reconnectTimer)
+      cleanupChannel()
     }
   }, [currentUserId])
 
@@ -208,6 +251,7 @@ function DashboardPage({ session }) {
       </header>
 
       {error && <p className="error banner">{error}</p>}
+      {realtimeStatus && <p className="muted">{realtimeStatus}</p>}
       {pushStatus && <p className="muted">{pushStatus}</p>}
 
       <button
