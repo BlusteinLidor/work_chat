@@ -220,7 +220,12 @@ function AuthPage() {
               {isSignUp ? 'כבר יש לכם חשבון? התחברו' : 'אין לכם חשבון? הירשמו'}
             </button>
             {!isSignUp && (
-              <button type="button" className="text-button" onClick={openForgotPassword}>
+              <button
+                type="button"
+                className="text-button"
+                onClick={openForgotPassword}
+                style={{ marginTop: '0.5rem' }}
+              >
                 שכחתם סיסמה?
               </button>
             )}
