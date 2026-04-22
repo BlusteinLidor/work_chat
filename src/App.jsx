@@ -7,6 +7,10 @@ import DashboardPage from './pages/DashboardPage'
 function App() {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
+  const isRecoveryFlow =
+    typeof window !== 'undefined' &&
+    (window.location.hash.includes('type=recovery') ||
+      new URLSearchParams(window.location.search).get('mode') === 'reset')
 
   useEffect(() => {
     let isMounted = true
@@ -47,7 +51,7 @@ function App() {
     <Routes>
       <Route
         path="/auth"
-        element={session ? <Navigate to="/dashboard" replace /> : <AuthPage />}
+        element={session && !isRecoveryFlow ? <Navigate to="/dashboard" replace /> : <AuthPage />}
       />
       <Route
         path="/dashboard"
@@ -55,7 +59,7 @@ function App() {
       />
       <Route
         path="*"
-        element={<Navigate to={session ? '/dashboard' : '/auth'} replace />}
+        element={<Navigate to={session && !isRecoveryFlow ? '/dashboard' : '/auth'} replace />}
       />
     </Routes>
   )
