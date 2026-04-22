@@ -215,21 +215,16 @@ function AuthPage() {
         {error && <p className="error">{error}</p>}
 
         {!isResetPassword && !isForgotPassword && (
-          <>
+          <div className="auth-links">
             <button type="button" className="text-button" onClick={isSignUp ? openLogin : openSignUp}>
               {isSignUp ? 'כבר יש לכם חשבון? התחברו' : 'אין לכם חשבון? הירשמו'}
             </button>
             {!isSignUp && (
-              <button
-                type="button"
-                className="text-button"
-                onClick={openForgotPassword}
-                style={{ marginTop: '0.5rem' }}
-              >
+              <button type="button" className="text-button" onClick={openForgotPassword}>
                 שכחתם סיסמה?
               </button>
             )}
-          </>
+          </div>
         )}
 
         {(isForgotPassword || isResetPassword) && (

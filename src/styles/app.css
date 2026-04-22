@@ -120,6 +120,11 @@ button:disabled {
   padding: 0.3rem 0;
 }
 
+.auth-links {
+  display: grid;
+  gap: 0.35rem;
+}
+
 .message {
   color: #93c5fd;
 }
@@ -186,6 +191,15 @@ button:disabled {
   height: 44px;
   border-radius: 999px;
   object-fit: cover;
+}
+
+.avatar-button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  min-height: 0;
+  line-height: 0;
+  cursor: pointer;
 }
 
 .user-list p {
@@ -304,6 +318,7 @@ button:disabled {
   display: grid;
   place-items: center;
   padding: 1rem;
+  z-index: 1000;
 }
 
 .profile-modal {
@@ -318,6 +333,36 @@ button:disabled {
   object-fit: cover;
   border: 1px solid rgba(255, 255, 255, 0.2);
   margin-top: 0.8rem;
+}
+
+.image-lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.86);
+  display: grid;
+  place-items: center;
+  padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
+  z-index: 1100;
+}
+
+.image-lightbox-close {
+  position: absolute;
+  top: max(0.9rem, env(safe-area-inset-top));
+  right: 1rem;
+  min-height: 40px;
+  min-width: 40px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.85);
+  color: #f3f4f6;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 0.35rem 0.65rem;
+}
+
+.image-lightbox-image {
+  width: min(92vw, 520px);
+  max-height: 82dvh;
+  border-radius: 14px;
+  object-fit: contain;
 }
 
 @media (max-width: 900px) {
@@ -394,5 +439,24 @@ button:disabled {
   .messages {
     min-height: 220px;
     max-height: 45dvh;
+  }
+
+  .auth-links .text-button {
+    display: block;
+    width: 100%;
+    text-align: right;
+  }
+
+  .image-lightbox-close {
+    top: max(0.75rem, env(safe-area-inset-top));
+    right: 0.75rem;
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .image-lightbox-image {
+    width: min(96vw, 620px);
+    max-height: 80dvh;
+    border-radius: 10px;
   }
 }
