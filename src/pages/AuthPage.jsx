@@ -8,7 +8,7 @@ function AuthPage() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-
+//
   const submit = async (event) => {
     event.preventDefault()
     setError('')
