@@ -182,7 +182,7 @@ function DashboardPage({ session }) {
       <header className="dashboard-header card">
         <div>
           <h1>צ׳אט חברים</h1>
-          <p className="muted">חדר צ׳אט בזמן אמת לקבוצה שלכם.</p>
+          <p className="muted">נאנומושן מסווג</p>
         </div>
         <div>
           <button type="button" onClick={handleEnableNotifications}>
