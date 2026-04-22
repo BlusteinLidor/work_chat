@@ -5,27 +5,6 @@ import UserList from '../components/UserList'
 import { registerPushForUser } from '../lib/pushNotifications'
 import { supabase } from '../lib/supabase'
 
-const debugLog = (hypothesisId, location, message, data) => {
-  // #region agent log
-  fetch('http://127.0.0.1:7708/ingest/861b4098-5a80-42fd-97fe-552d7a774d51', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Debug-Session-Id': 'd98c06',
-    },
-    body: JSON.stringify({
-      sessionId: 'd98c06',
-      runId: 'pre-fix-1',
-      hypothesisId,
-      location,
-      message,
-      data,
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {})
-  // #endregion
-}
-
 function DashboardPage({ session }) {
   const currentUserId = session.user.id
   const [profiles, setProfiles] = useState([])
@@ -100,23 +79,11 @@ function DashboardPage({ session }) {
   }, [currentUserId])
 
   const handleSendMessage = async (content) => {
-    // #region agent log
-    debugLog('H1', 'DashboardPage.jsx:handleSendMessage:start', 'send message requested', {
-      hasSessionProp: Boolean(session),
-      hasSessionToken: Boolean(session?.access_token),
-      contentLength: content?.length ?? 0,
-    })
-    // #endregion
     const { error: insertError } = await supabase.from('messages').insert({
       user_id: currentUserId,
       content,
     })
     if (insertError) {
-      // #region agent log
-      debugLog('H5', 'DashboardPage.jsx:handleSendMessage:insertError', 'message insert failed', {
-        insertErrorMessage: insertError.message,
-      })
-      // #endregion
       setError(insertError.message)
       return
     }
@@ -125,59 +92,21 @@ function DashboardPage({ session }) {
       data: { session: activeSession },
     } = await supabase.auth.getSession()
     const accessToken = activeSession?.access_token || session?.access_token
-    const tokenSource = activeSession?.access_token ? 'activeSession' : session?.access_token ? 'prop' : 'none'
-    let tokenAlg = 'unknown'
-    if (accessToken) {
-      try {
-        const tokenHeader = JSON.parse(window.atob(accessToken.split('.')[0]))
-        tokenAlg = tokenHeader?.alg ?? 'missing'
-      } catch {
-        tokenAlg = 'decode-failed'
-      }
-    }
-    // #region agent log
-    debugLog('H1', 'DashboardPage.jsx:handleSendMessage:token', 'resolved token before invoke', {
-      tokenSource,
-      hasAccessToken: Boolean(accessToken),
-      tokenLength: accessToken?.length ?? 0,
-      tokenAlg,
-    })
-    // #endregion
     if (!accessToken) {
       setError('Your session expired. Please sign in again.')
       return
     }
 
     supabase.functions.setAuth(accessToken)
-    // #region agent log
-    debugLog('H2', 'DashboardPage.jsx:handleSendMessage:beforeInvoke', 'invoking send-push with explicit auth', {
-      hasAuthorizationHeader: true,
-      usedSetAuth: true,
-      tokenAlg,
-    })
-    // #endregion
 
     const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push', {
       body: { content, senderId: currentUserId },
       headers: { Authorization: `Bearer ${accessToken}` },
     })
     if (pushError) {
-      // #region agent log
-      debugLog('H3', 'DashboardPage.jsx:handleSendMessage:invokeError', 'send-push invoke returned error', {
-        pushErrorName: pushError.name,
-        pushErrorMessage: pushError.message,
-        pushErrorContextStatus: pushError.context?.status ?? null,
-        pushErrorContextBody: pushError.context?.body ?? null,
-      })
-      // #endregion
       console.error('send-push error', pushError)
       setError(pushError.message)
     } else {
-      // #region agent log
-      debugLog('H4', 'DashboardPage.jsx:handleSendMessage:invokeSuccess', 'send-push invoke succeeded', {
-        pushDataType: typeof pushData,
-      })
-      // #endregion
       console.log('send-push ok', pushData)
     }
   }
