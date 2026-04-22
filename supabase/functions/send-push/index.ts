@@ -44,12 +44,18 @@ Deno.serve(async (request) => {
 
   try {
     const authorizationHeader = request.headers.get('Authorization')
-    const { content, senderId } = (await request.json()) as {
+    const { content, senderId, hasImage } = (await request.json()) as {
       messageId?: number
       content?: string
       senderId?: string
+      hasImage?: boolean
     }
-    const bodyText = typeof content === 'string' && content.trim() ? content.trim() : 'New message'
+    const hasText = typeof content === 'string' && content.trim().length > 0
+    const bodyText = hasText
+      ? content.trim()
+      : hasImage
+        ? 'שלח תמונה'
+        : 'הודעה חדשה'
 
     let effectiveSenderId = typeof senderId === 'string' ? senderId : ''
     if (authorizationHeader) {
@@ -68,7 +74,7 @@ Deno.serve(async (request) => {
       .eq('id', effectiveSenderId)
       .maybeSingle()
 
-    const senderName = senderProfile?.display_name || 'Someone'
+    const senderName = senderProfile?.display_name || 'מישהו'
 
     const { data: subscriptions, error: subscriptionError } = await adminClient
       .from('push_subscriptions')

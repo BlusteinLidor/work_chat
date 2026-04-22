@@ -13,6 +13,7 @@ function DashboardPage({ session }) {
   const [onlineUserIds, setOnlineUserIds] = useState(new Set())
   const [error, setError] = useState('')
   const [pushStatus, setPushStatus] = useState('')
+  const [hasAutoPushAttempted, setHasAutoPushAttempted] = useState(false)
 
   const profilesById = useMemo(
     () => new Map(profiles.map((profile) => [profile.id, profile])),
@@ -61,7 +62,14 @@ function DashboardPage({ session }) {
       )
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState()
-        const nextOnline = new Set(Object.keys(state))
+        const nextOnline = new Set()
+        Object.values(state).forEach((presences) => {
+          presences.forEach((presence) => {
+            if (typeof presence?.user_id === 'string') {
+              nextOnline.add(presence.user_id)
+            }
+          })
+        })
         setOnlineUserIds(nextOnline)
       })
       .subscribe(async (status) => {
@@ -78,10 +86,41 @@ function DashboardPage({ session }) {
     }
   }, [currentUserId])
 
-  const handleSendMessage = async (content) => {
+  useEffect(() => {
+    if (hasAutoPushAttempted) return
+    let isMounted = true
+
+    const autoEnableNotifications = async () => {
+      setHasAutoPushAttempted(true)
+      try {
+        await registerPushForUser(currentUserId)
+        if (!isMounted) return
+        if (Notification.permission === 'granted') {
+          setPushStatus('ההתראות הופעלו במכשיר הזה.')
+        } else if (Notification.permission === 'denied') {
+          setPushStatus('ההרשאה להתראות חסומה בדפדפן. אפשר לנסות שוב.')
+        }
+      } catch (pushRegistrationError) {
+        if (!isMounted) return
+        const message =
+          pushRegistrationError instanceof Error ? pushRegistrationError.message : 'הפעלת ההתראות נכשלה.'
+        setPushStatus(message)
+      }
+    }
+
+    autoEnableNotifications()
+    return () => {
+      isMounted = false
+    }
+  }, [currentUserId, hasAutoPushAttempted])
+
+  const handleSendMessage = async ({ content, imageUrl, hasImage = false }) => {
+    const normalizedContent = typeof content === 'string' ? content.trim() : ''
+    const normalizedImageUrl = typeof imageUrl === 'string' ? imageUrl : null
     const { error: insertError } = await supabase.from('messages').insert({
       user_id: currentUserId,
-      content,
+      content: normalizedContent || null,
+      image_url: normalizedImageUrl,
     })
     if (insertError) {
       setError(insertError.message)
@@ -93,14 +132,14 @@ function DashboardPage({ session }) {
     } = await supabase.auth.getSession()
     const accessToken = activeSession?.access_token || session?.access_token
     if (!accessToken) {
-      setError('Your session expired. Please sign in again.')
+      setError('הסשן פג תוקף. התחברו מחדש.')
       return
     }
 
     supabase.functions.setAuth(accessToken)
 
     const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push', {
-      body: { content, senderId: currentUserId },
+      body: { content: normalizedContent, senderId: currentUserId, hasImage, imageUrl: normalizedImageUrl },
       headers: { Authorization: `Bearer ${accessToken}` },
     })
     if (pushError) {
@@ -116,15 +155,15 @@ function DashboardPage({ session }) {
     try {
       await registerPushForUser(currentUserId)
       if (Notification.permission === 'granted') {
-        setPushStatus('Notifications enabled on this device.')
+        setPushStatus('ההתראות הופעלו במכשיר הזה.')
       } else {
-        setPushStatus('Notifications permission was not granted.')
+        setPushStatus('לא התקבלה הרשאה להתראות.')
       }
     } catch (pushRegistrationError) {
       const message =
         pushRegistrationError instanceof Error
           ? pushRegistrationError.message
-          : 'Failed to enable notifications.'
+          : 'הפעלת ההתראות נכשלה.'
       setPushStatus(message)
     }
   }
@@ -142,15 +181,15 @@ function DashboardPage({ session }) {
     <main className="dashboard-shell">
       <header className="dashboard-header card">
         <div>
-          <h1>Friends Chat</h1>
-          <p className="muted">Realtime room for your group.</p>
+          <h1>צ׳אט חברים</h1>
+          <p className="muted">חדר צ׳אט בזמן אמת לקבוצה שלכם.</p>
         </div>
         <div>
           <button type="button" onClick={handleEnableNotifications}>
-            Enable notifications
+            הפעלת התראות
           </button>
           <button type="button" onClick={() => supabase.auth.signOut()}>
-            Sign out
+            התנתקות
           </button>
         </div>
       </header>

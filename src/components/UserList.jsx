@@ -4,7 +4,7 @@ const fallbackAvatar =
 function UserList({ profiles, onlineUserIds, currentUserId }) {
   return (
     <section className="card user-list">
-      <h2>People</h2>
+      <h2>משתתפים</h2>
       <ul>
         {profiles.map((profile) => {
           const isCurrentUser = profile.id === currentUserId
@@ -18,9 +18,9 @@ function UserList({ profiles, onlineUserIds, currentUserId }) {
               <div>
                 <strong>
                   {profile.display_name}
-                  {isCurrentUser ? ' (You)' : ''}
+                  {isCurrentUser ? ' (אתם)' : ''}
                 </strong>
-                <p>{isOnline ? 'Online' : 'Offline'}</p>
+                <p>{isOnline ? 'מחובר/ת' : 'לא מחובר/ת'}</p>
               </div>
             </li>
           )

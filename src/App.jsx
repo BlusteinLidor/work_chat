@@ -10,6 +10,8 @@ function App() {
 
   useEffect(() => {
     let isMounted = true
+    document.documentElement.lang = 'he'
+    document.documentElement.dir = 'rtl'
 
     const loadSession = async () => {
       const { data, error } = await supabase.auth.getSession()
@@ -38,7 +40,7 @@ function App() {
   }, [])
 
   if (loading) {
-    return <div className="center-screen">Loading chat app...</div>
+    return <div className="center-screen">טוען את אפליקציית הצ׳אט...</div>
   }
 
   return (

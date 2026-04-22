@@ -68,22 +68,22 @@ function ProfileSetupModal({ userId, onProfileSaved }) {
   return (
     <div className="modal-backdrop">
       <section className="card profile-modal">
-        <h2>Complete your profile</h2>
-        <p className="muted">Choose a display name and optional profile image.</p>
+        <h2>השלמת פרופיל</h2>
+        <p className="muted">בחרו שם תצוגה ותמונת פרופיל אופציונלית.</p>
         <form onSubmit={saveProfile} className="auth-form">
           <label>
-            Display name
+            שם תצוגה
             <input
               type="text"
               maxLength={40}
               required
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
-              placeholder="Your chat name"
+              placeholder="השם שלכם בצ׳אט"
             />
           </label>
           <label>
-            Profile picture (optional)
+            תמונת פרופיל (אופציונלי)
             <input
               type="file"
               accept="image/png,image/jpeg,image/webp"
@@ -91,7 +91,7 @@ function ProfileSetupModal({ userId, onProfileSaved }) {
             />
           </label>
           <button type="submit" disabled={saving}>
-            {saving ? 'Saving...' : 'Save profile'}
+            {saving ? 'שומר...' : 'שמירת פרופיל'}
           </button>
         </form>
         {error && <p className="error">{error}</p>}

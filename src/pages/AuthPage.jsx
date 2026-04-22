@@ -37,9 +37,9 @@ function AuthPage() {
     }
 
     if (isSignUp) {
-      setMessage('Account created. Check your inbox if email confirmation is enabled.')
+      setMessage('החשבון נוצר. אם אימות מייל פעיל, בדקו את תיבת הדואר שלכם.')
     } else {
-      setMessage('Signed in successfully.')
+      setMessage('התחברתם בהצלחה.')
     }
 
     setLoading(false)
@@ -48,12 +48,12 @@ function AuthPage() {
   return (
     <main className="auth-shell">
       <section className="card auth-card">
-        <h1>Friends Chat</h1>
-        <p className="muted">Fast realtime chat for your group.</p>
+        <h1>צ׳אט חברים</h1>
+        <p className="muted">צ׳אט מהיר בזמן אמת לקבוצה שלכם.</p>
 
         <form onSubmit={submit} className="auth-form">
           <label>
-            Email
+            אימייל
             <input
               type="email"
               required
@@ -64,19 +64,19 @@ function AuthPage() {
           </label>
 
           <label>
-            Password
+            סיסמה
             <input
               type="password"
               required
               minLength={6}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="At least 6 characters"
+              placeholder="לפחות 6 תווים"
             />
           </label>
 
           <button type="submit" disabled={loading}>
-            {loading ? 'Please wait...' : isSignUp ? 'Sign Up' : 'Log In'}
+            {loading ? 'נא להמתין...' : isSignUp ? 'הרשמה' : 'התחברות'}
           </button>
         </form>
 
@@ -88,7 +88,7 @@ function AuthPage() {
           className="text-button"
           onClick={() => setIsSignUp((current) => !current)}
         >
-          {isSignUp ? 'Already have an account? Log in' : "Need an account? Sign up"}
+          {isSignUp ? 'כבר יש לכם חשבון? התחברו' : 'אין לכם חשבון? הירשמו'}
         </button>
       </section>
     </main>
