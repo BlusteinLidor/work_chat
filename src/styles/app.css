@@ -17,6 +17,7 @@
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   direction: rtl;
   text-align: right;
   background:
@@ -27,10 +28,12 @@ body {
 
 #root {
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .center-screen {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
 }
@@ -51,11 +54,12 @@ body {
 .dashboard-shell {
   width: min(1100px, 92vw);
   margin: 0 auto;
-  padding: 2rem 0;
+  padding: 1.25rem 0 max(1rem, env(safe-area-inset-bottom));
 }
 
 .auth-shell {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
 }
@@ -89,6 +93,7 @@ input {
   color: #f3f4f6;
   border-radius: 10px;
   padding: 0.65rem 0.75rem;
+  min-height: 44px;
   text-align: right;
 }
 
@@ -96,6 +101,7 @@ button {
   border: 0;
   border-radius: 10px;
   padding: 0.65rem 0.9rem;
+  min-height: 44px;
   cursor: pointer;
   font-weight: 600;
   color: #0b1020;
@@ -134,11 +140,23 @@ button:disabled {
   gap: 0.9rem;
 }
 
+.dashboard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
 .dashboard-grid {
   margin-top: 1rem;
   display: grid;
   grid-template-columns: 320px 1fr;
   gap: 1rem;
+}
+
+.participants-toggle {
+  display: none;
+  width: 100%;
+  margin-top: 0.9rem;
 }
 
 .user-list,
@@ -215,12 +233,14 @@ button:disabled {
 .chat-form {
   margin-top: 0.9rem;
   display: flex;
+  flex-wrap: wrap;
   gap: 0.6rem;
   align-items: center;
 }
 
 .chat-form input {
   flex: 1;
+  min-width: 180px;
 }
 
 .upload-button {
@@ -292,12 +312,78 @@ button:disabled {
 }
 
 @media (max-width: 900px) {
+  .auth-shell,
+  .dashboard-shell {
+    width: min(100%, 92vw);
+    padding-top: 1rem;
+  }
+
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
 
+  .participants-toggle {
+    display: block;
+    position: sticky;
+    top: 0.6rem;
+    z-index: 10;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  }
+
+  .participants-panel {
+    display: none;
+  }
+
+  .participants-panel.open {
+    display: block;
+  }
+
   .messages {
     min-height: 260px;
-    max-height: 45vh;
+    max-height: 50dvh;
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-card,
+  .user-list,
+  .chat-window,
+  .profile-modal {
+    padding: 0.9rem;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-actions {
+    width: 100%;
+  }
+
+  .dashboard-actions button {
+    flex: 1;
+  }
+
+  .chat-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .chat-form input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .upload-button,
+  .chat-form button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .messages {
+    min-height: 220px;
+    max-height: 45dvh;
   }
 }

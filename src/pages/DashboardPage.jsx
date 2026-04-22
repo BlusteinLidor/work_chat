@@ -14,6 +14,7 @@ function DashboardPage({ session }) {
   const [error, setError] = useState('')
   const [pushStatus, setPushStatus] = useState('')
   const [hasAutoPushAttempted, setHasAutoPushAttempted] = useState(false)
+  const [showParticipantsOnMobile, setShowParticipantsOnMobile] = useState(false)
 
   const profilesById = useMemo(
     () => new Map(profiles.map((profile) => [profile.id, profile])),
@@ -41,7 +42,13 @@ function DashboardPage({ session }) {
 
   useEffect(() => {
     const channel = supabase
-      .channel(`dashboard-live-${currentUserId}`)
+      .channel('dashboard-live', {
+        config: {
+          presence: {
+            key: currentUserId,
+          },
+        },
+      })
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'profiles' },
@@ -78,6 +85,8 @@ function DashboardPage({ session }) {
             user_id: currentUserId,
             online_at: new Date().toISOString(),
           })
+        } else if (status === 'CHANNEL_ERROR') {
+          setError('לא הצלחנו להתחבר לסטטוס אונליין בזמן אמת.')
         }
       })
 
@@ -184,7 +193,7 @@ function DashboardPage({ session }) {
           <h1>צ׳אט חברים</h1>
           <p className="muted">נאנומושן מסווג</p>
         </div>
-        <div>
+        <div className="dashboard-actions">
           <button type="button" onClick={handleEnableNotifications}>
             הפעלת התראות
           </button>
@@ -197,8 +206,23 @@ function DashboardPage({ session }) {
       {error && <p className="error banner">{error}</p>}
       {pushStatus && <p className="muted">{pushStatus}</p>}
 
+      <button
+        type="button"
+        className="participants-toggle"
+        onClick={() => setShowParticipantsOnMobile((current) => !current)}
+        aria-expanded={showParticipantsOnMobile}
+        aria-controls="participants-panel"
+      >
+        {showParticipantsOnMobile ? 'הסתרת משתתפים' : 'הצגת משתתפים'} ({onlineUserIds.size}/{profiles.length})
+      </button>
+
       <section className="dashboard-grid">
-        <UserList profiles={profiles} onlineUserIds={onlineUserIds} currentUserId={currentUserId} />
+        <div
+          id="participants-panel"
+          className={showParticipantsOnMobile ? 'participants-panel open' : 'participants-panel'}
+        >
+          <UserList profiles={profiles} onlineUserIds={onlineUserIds} currentUserId={currentUserId} />
+        </div>
         <ChatWindow
           messages={messages}
           profilesById={profilesById}
