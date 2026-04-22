@@ -158,7 +158,7 @@ function DashboardPage({ session }) {
     // #endregion
 
     const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push', {
-      body: { content },
+      body: { content, senderId: currentUserId },
       headers: { Authorization: `Bearer ${accessToken}` },
     })
     if (pushError) {

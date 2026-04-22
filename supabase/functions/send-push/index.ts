@@ -44,27 +44,28 @@ Deno.serve(async (request) => {
 
   try {
     const authorizationHeader = request.headers.get('Authorization')
-    if (!authorizationHeader) {
-      return sendResponse({ error: 'Missing authorization header.' }, 401)
+    const { content, senderId } = (await request.json()) as {
+      messageId?: number
+      content?: string
+      senderId?: string
     }
-
-    const authedClient = getAuthedClient(authorizationHeader)
-    const {
-      data: { user },
-      error: userError,
-    } = await authedClient.auth.getUser()
-
-    if (userError || !user) {
-      return sendResponse({ error: 'Unauthorized request.' }, 401)
-    }
-
-    const { content } = (await request.json()) as { messageId?: number; content?: string }
     const bodyText = typeof content === 'string' && content.trim() ? content.trim() : 'New message'
+
+    let effectiveSenderId = typeof senderId === 'string' ? senderId : ''
+    if (authorizationHeader) {
+      const authedClient = getAuthedClient(authorizationHeader)
+      const {
+        data: { user },
+      } = await authedClient.auth.getUser()
+      if (user?.id) {
+        effectiveSenderId = user.id
+      }
+    }
 
     const { data: senderProfile } = await adminClient
       .from('profiles')
       .select('display_name')
-      .eq('id', user.id)
+      .eq('id', effectiveSenderId)
       .maybeSingle()
 
     const senderName = senderProfile?.display_name || 'Someone'
@@ -72,7 +73,7 @@ Deno.serve(async (request) => {
     const { data: subscriptions, error: subscriptionError } = await adminClient
       .from('push_subscriptions')
       .select('id, endpoint, p256dh, auth')
-      .neq('user_id', user.id)
+      .neq('user_id', effectiveSenderId)
 
     if (subscriptionError) {
       return sendResponse({ error: subscriptionError.message }, 500)
