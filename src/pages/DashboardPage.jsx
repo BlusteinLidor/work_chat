@@ -20,6 +20,7 @@ function DashboardPage({ session }) {
     () => new Map(profiles.map((profile) => [profile.id, profile])),
     [profiles],
   )
+  const currentUserProfile = profilesById.get(currentUserId) || null
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -194,6 +195,9 @@ function DashboardPage({ session }) {
           <p className="muted">נאנומושן מסווג</p>
         </div>
         <div className="dashboard-actions">
+          <button type="button" onClick={() => setShowProfileSetup(true)}>
+            עריכת פרופיל
+          </button>
           <button type="button" onClick={handleEnableNotifications}>
             הפעלת התראות
           </button>
@@ -232,7 +236,15 @@ function DashboardPage({ session }) {
       </section>
 
       {showProfileSetup && (
-        <ProfileSetupModal userId={currentUserId} onProfileSaved={onProfileSaved} />
+        <ProfileSetupModal
+          userId={currentUserId}
+          onProfileSaved={onProfileSaved}
+          initialDisplayName={currentUserProfile?.display_name || ''}
+          initialAvatarUrl={currentUserProfile?.avatar_url || ''}
+          title={currentUserProfile ? 'עריכת פרופיל' : 'השלמת פרופיל'}
+          submitLabel={currentUserProfile ? 'שמירת שינויים' : 'שמירת פרופיל'}
+          onCancel={currentUserProfile ? () => setShowProfileSetup(false) : undefined}
+        />
       )}
     </main>
   )

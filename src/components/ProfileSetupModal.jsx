@@ -1,11 +1,23 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-function ProfileSetupModal({ userId, onProfileSaved }) {
-  const [displayName, setDisplayName] = useState('')
+function ProfileSetupModal({
+  userId,
+  onProfileSaved,
+  initialDisplayName = '',
+  initialAvatarUrl = '',
+  title = 'השלמת פרופיל',
+  submitLabel = 'שמירת פרופיל',
+  onCancel,
+}) {
+  const [displayName, setDisplayName] = useState(initialDisplayName)
   const [avatarFile, setAvatarFile] = useState(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    setDisplayName(initialDisplayName)
+  }, [initialDisplayName])
 
   const saveProfile = async (event) => {
     event.preventDefault()
@@ -13,7 +25,7 @@ function ProfileSetupModal({ userId, onProfileSaved }) {
 
     setSaving(true)
     setError('')
-    let avatarUrl = null
+    let avatarUrl = initialAvatarUrl || null
     const { data: authData } = await supabase.auth.getUser()
     const authUserId = authData?.user?.id ?? null
     // #region agent log
@@ -68,8 +80,11 @@ function ProfileSetupModal({ userId, onProfileSaved }) {
   return (
     <div className="modal-backdrop">
       <section className="card profile-modal">
-        <h2>השלמת פרופיל</h2>
+        <h2>{title}</h2>
         <p className="muted">בחרו שם תצוגה ותמונת פרופיל אופציונלית.</p>
+        {initialAvatarUrl && !avatarFile && (
+          <img className="profile-preview" src={initialAvatarUrl} alt="תמונת הפרופיל הנוכחית" />
+        )}
         <form onSubmit={saveProfile} className="auth-form">
           <label>
             שם תצוגה
@@ -91,8 +106,13 @@ function ProfileSetupModal({ userId, onProfileSaved }) {
             />
           </label>
           <button type="submit" disabled={saving}>
-            {saving ? 'שומר...' : 'שמירת פרופיל'}
+            {saving ? 'שומר...' : submitLabel}
           </button>
+          {onCancel && (
+            <button type="button" className="text-button" onClick={onCancel} disabled={saving}>
+              ביטול
+            </button>
+          )}
         </form>
         {error && <p className="error">{error}</p>}
       </section>
