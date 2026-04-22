@@ -88,8 +88,16 @@ function DashboardPage({ session }) {
       return
     }
 
+    const {
+      data: { session: activeSession },
+    } = await supabase.auth.getSession()
+    const authHeaders = activeSession?.access_token
+      ? { Authorization: `Bearer ${activeSession.access_token}` }
+      : undefined
+
     const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push', {
       body: { content },
+      headers: authHeaders,
     })
     if (pushError) {
       console.error('send-push error', pushError)
