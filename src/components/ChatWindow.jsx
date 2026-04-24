@@ -160,23 +160,25 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
       ) : null}
 
       <form className="chat-form" onSubmit={send}>
-        <input
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder="כתבו הודעה..."
-          maxLength={500}
-          disabled={sendingMessage}
-        />
-        <label className="upload-button">
-          {uploadingImage ? 'מעלה...' : 'תמונה'}
+        <div className="chat-form-top">
           <input
-            type="file"
-            accept="image/png,image/jpeg,image/webp,image/gif"
-            onChange={onImageSelected}
-            disabled={uploadingImage}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder="כתבו הודעה..."
+            maxLength={500}
+            disabled={sendingMessage}
           />
-        </label>
-        <button type="submit" disabled={sendingMessage}>
+          <label className="upload-button upload-button-inline">
+            {uploadingImage ? 'מעלה...' : 'תמונה'}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              onChange={onImageSelected}
+              disabled={uploadingImage}
+            />
+          </label>
+        </div>
+        <button type="submit" className="send-button" disabled={sendingMessage}>
           {sendingMessage ? 'שולח...' : 'שליחה'}
         </button>
       </form>
