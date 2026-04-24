@@ -143,6 +143,8 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 0.9rem;
+  position: relative;
+  z-index: 40;
 }
 
 .dashboard-actions {
