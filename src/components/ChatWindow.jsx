@@ -14,6 +14,7 @@ const getSenderColorClass = (userId) => {
 
 function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
   const [draft, setDraft] = useState('')
+  const [sendingMessage, setSendingMessage] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [uploadError, setUploadError] = useState('')
   const [isNearBottom, setIsNearBottom] = useState(true)
@@ -74,9 +75,18 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
   const send = async (event) => {
     event.preventDefault()
     const text = draft.trim()
-    if (!text) return
-    await onSendMessage({ content: text })
+    if (!text || sendingMessage) return
+
     setDraft('')
+    setSendingMessage(true)
+    try {
+      await onSendMessage({ content: text })
+    } catch (error) {
+      setDraft(text)
+      setUploadError(error instanceof Error ? error.message : 'שליחת ההודעה נכשלה.')
+    } finally {
+      setSendingMessage(false)
+    }
   }
 
   const onImageSelected = async (event) => {
@@ -153,6 +163,7 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
           onChange={(event) => setDraft(event.target.value)}
           placeholder="כתבו הודעה..."
           maxLength={500}
+          disabled={sendingMessage}
         />
         <label className="upload-button">
           {uploadingImage ? 'מעלה...' : 'תמונה'}
@@ -163,7 +174,9 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
             disabled={uploadingImage}
           />
         </label>
-        <button type="submit">שליחה</button>
+        <button type="submit" disabled={sendingMessage}>
+          {sendingMessage ? 'שולח...' : 'שליחה'}
+        </button>
       </form>
       {uploadError ? <p className="error">{uploadError}</p> : null}
     </section>
