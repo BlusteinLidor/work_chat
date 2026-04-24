@@ -16,7 +16,9 @@ function DashboardPage({ session }) {
   const [pushStatus, setPushStatus] = useState('')
   const [hasAutoPushAttempted, setHasAutoPushAttempted] = useState(false)
   const [showParticipantsOnMobile, setShowParticipantsOnMobile] = useState(false)
+  const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false)
   const channelRef = useRef(null)
+  const settingsMenuRef = useRef(null)
 
   const profilesById = useMemo(
     () => new Map(profiles.map((profile) => [profile.id, profile])),
@@ -167,6 +169,29 @@ function DashboardPage({ session }) {
     }
   }, [currentUserId, hasAutoPushAttempted])
 
+  useEffect(() => {
+    if (!isSettingsMenuOpen) return
+
+    const handleOutsideClick = (event) => {
+      if (!settingsMenuRef.current?.contains(event.target)) {
+        setIsSettingsMenuOpen(false)
+      }
+    }
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsSettingsMenuOpen(false)
+      }
+    }
+
+    window.addEventListener('mousedown', handleOutsideClick)
+    window.addEventListener('keydown', handleEscape)
+    return () => {
+      window.removeEventListener('mousedown', handleOutsideClick)
+      window.removeEventListener('keydown', handleEscape)
+    }
+  }, [isSettingsMenuOpen])
+
   const handleSendMessage = async ({ content, imageUrl, hasImage = false }) => {
     const normalizedContent = typeof content === 'string' ? content.trim() : ''
     const normalizedImageUrl = typeof imageUrl === 'string' ? imageUrl : null
@@ -237,16 +262,50 @@ function DashboardPage({ session }) {
           <h1>צ׳אט חברים</h1>
           <p className="muted">נאנומושן מסווג</p>
         </div>
-        <div className="dashboard-actions">
-          <button type="button" onClick={() => setShowProfileSetup(true)}>
-            עריכת פרופיל
+        <div className="dashboard-actions" ref={settingsMenuRef}>
+          <button
+            type="button"
+            className="settings-trigger"
+            aria-haspopup="menu"
+            aria-expanded={isSettingsMenuOpen}
+            onClick={() => setIsSettingsMenuOpen((current) => !current)}
+          >
+            תפריט הגדרות
           </button>
-          <button type="button" onClick={handleEnableNotifications}>
-            הפעלת התראות
-          </button>
-          <button type="button" onClick={() => supabase.auth.signOut()}>
-            התנתקות
-          </button>
+          {isSettingsMenuOpen && (
+            <div className="settings-menu card" role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setShowProfileSetup(true)
+                  setIsSettingsMenuOpen(false)
+                }}
+              >
+                עריכת פרופיל
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  handleEnableNotifications()
+                  setIsSettingsMenuOpen(false)
+                }}
+              >
+                הפעלת התראות
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setIsSettingsMenuOpen(false)
+                  supabase.auth.signOut()
+                }}
+              >
+                התנתקות
+              </button>
+            </div>
+          )}
         </div>
       </header>
 

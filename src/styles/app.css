@@ -146,9 +146,27 @@ button:disabled {
 }
 
 .dashboard-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem;
+  position: relative;
+}
+
+.settings-trigger {
+  min-width: 140px;
+}
+
+.settings-menu {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  right: 0;
+  display: grid;
+  gap: 0.45rem;
+  min-width: 210px;
+  padding: 0.55rem;
+  z-index: 30;
+}
+
+.settings-menu button {
+  width: 100%;
+  text-align: right;
 }
 
 .dashboard-grid {
@@ -464,10 +482,16 @@ button:disabled {
 
   .dashboard-actions {
     width: 100%;
+    display: grid;
   }
 
-  .dashboard-actions button {
-    flex: 1;
+  .settings-trigger {
+    width: 100%;
+  }
+
+  .settings-menu {
+    width: 100%;
+    min-width: 0;
   }
 
   .chat-form {
