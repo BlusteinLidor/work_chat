@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
+const SENDER_COLOR_VARIANTS = 12
+
 const getSenderColorClass = (userId) => {
   if (!userId) return 'sender-color-1'
   let hash = 0
@@ -8,7 +10,7 @@ const getSenderColorClass = (userId) => {
     hash = (hash << 5) - hash + userId.charCodeAt(index)
     hash |= 0
   }
-  const normalized = Math.abs(hash) % 5
+  const normalized = Math.abs(hash) % SENDER_COLOR_VARIANTS
   return `sender-color-${normalized + 1}`
 }
 
