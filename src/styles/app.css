@@ -57,6 +57,12 @@ body {
   padding: 1.25rem 0 max(1rem, env(safe-area-inset-bottom));
 }
 
+.dashboard-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .auth-shell {
   min-height: 100vh;
   min-height: 100dvh;
@@ -172,7 +178,6 @@ button:disabled {
 }
 
 .dashboard-grid {
-  margin-top: 1rem;
   display: grid;
   grid-template-columns: 320px 1fr;
   gap: 1rem;
@@ -446,6 +451,10 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .chat-window {
+    order: -1;
+  }
+
   .participants-toggle {
     display: block;
     position: sticky;
@@ -478,8 +487,20 @@ button:disabled {
   }
 
   .dashboard-header {
+    order: 4;
     flex-direction: column;
     align-items: stretch;
+    padding: 0.75rem 0.9rem;
+  }
+
+  .dashboard-header h1 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+
+  .dashboard-header p {
+    margin: 0.2rem 0 0;
+    font-size: 0.82rem;
   }
 
   .dashboard-actions {
@@ -494,6 +515,12 @@ button:disabled {
   .settings-menu {
     width: 100%;
     min-width: 0;
+  }
+
+  .banner,
+  .dashboard-shell > .muted {
+    order: 5;
+    margin: 0;
   }
 
   .chat-form {
@@ -521,7 +548,16 @@ button:disabled {
 
   .messages {
     min-height: 220px;
-    max-height: 45dvh;
+    max-height: 52dvh;
+  }
+
+  .participants-toggle {
+    order: 2;
+    margin-top: 0;
+  }
+
+  .dashboard-grid {
+    order: 1;
   }
 
   .auth-links .text-button {
