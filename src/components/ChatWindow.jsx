@@ -26,6 +26,19 @@ const parseReplyContent = (content) => {
   }
 }
 
+const getMessageCopyText = (message) => {
+  const parsed = parseReplyContent(message.content)
+  const lines = []
+  if (parsed.replyTo) {
+    lines.push(`תגובה ל${parsed.replyTo.displayName}: ${parsed.replyTo.excerpt}`)
+  }
+  if (parsed.body?.trim()) lines.push(parsed.body.trim())
+  if (message.image_url) lines.push(message.image_url)
+  const joined = lines.join('\n').trim()
+  if (joined) return joined
+  return message.content?.trim() || ''
+}
+
 function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
   const LONG_PRESS_MS = 450
   const REPLY_PREVIEW_MAX_LENGTH = 60
@@ -35,6 +48,7 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
   const [uploadError, setUploadError] = useState('')
   const [expandedImage, setExpandedImage] = useState(null)
   const [replyingTo, setReplyingTo] = useState(null)
+  const [messageActionTarget, setMessageActionTarget] = useState(null)
   const [isNearBottom, setIsNearBottom] = useState(true)
   const [showJumpToLatest, setShowJumpToLatest] = useState(false)
   const messagesRef = useRef(null)
@@ -111,6 +125,24 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
     [],
   )
 
+  useEffect(() => {
+    if (!messageActionTarget) return undefined
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setMessageActionTarget(null)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [messageActionTarget])
+
+  useEffect(() => {
+    if (!messageActionTarget) return undefined
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = originalOverflow
+    }
+  }, [messageActionTarget])
+
   const handleMessagesScroll = () => {
     const nearBottom = checkNearBottom()
     setIsNearBottom(nearBottom)
@@ -138,12 +170,7 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
     longPressTargetMessageIdRef.current = message.id
     const previewSource = message.content?.trim() || (message.image_url ? 'תמונה' : 'הודעה')
     longPressTimerRef.current = window.setTimeout(() => {
-      setReplyingTo({
-        id: message.id,
-        displayName,
-        preview: previewSource,
-      })
-      draftInputRef.current?.focus()
+      setMessageActionTarget({ message, displayName })
     }, LONG_PRESS_MS)
   }
 
@@ -156,6 +183,32 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
   const blockMessageContextMenu = (event) => {
     event.preventDefault()
     event.stopPropagation()
+  }
+
+  const closeMessageActionSheet = () => setMessageActionTarget(null)
+
+  const confirmReplyFromSheet = () => {
+    if (!messageActionTarget) return
+    const { message, displayName } = messageActionTarget
+    const previewSource = message.content?.trim() || (message.image_url ? 'תמונה' : 'הודעה')
+    setReplyingTo({
+      id: message.id,
+      displayName,
+      preview: previewSource,
+    })
+    setMessageActionTarget(null)
+    draftInputRef.current?.focus()
+  }
+
+  const copyMessageFromSheet = async () => {
+    if (!messageActionTarget) return
+    const text = getMessageCopyText(messageActionTarget.message)
+    try {
+      await navigator.clipboard.writeText(text)
+      setMessageActionTarget(null)
+    } catch {
+      setUploadError('ההעתקה ללוח נכשלה.')
+    }
   }
 
   const send = async (event) => {
@@ -245,7 +298,12 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
             >
               <header>
                 <strong>{profile?.display_name || 'משתמש לא מוכר'}</strong>
-                <small>{new Date(message.created_at).toLocaleTimeString()}</small>
+                <small>
+                  {new Date(message.created_at).toLocaleString(undefined, {
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
+                  })}
+                </small>
               </header>
               {parsedContent.replyTo ? (
                 <div className="reply-reference" aria-label="תגובה להודעה">
@@ -313,6 +371,39 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
         </button>
       </form>
       {uploadError ? <p className="error">{uploadError}</p> : null}
+
+      {messageActionTarget ? (
+        <div
+          className="message-action-sheet-backdrop"
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) closeMessageActionSheet()
+          }}
+        >
+          <div
+            className="message-action-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="message-action-sheet-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p id="message-action-sheet-title" className="message-action-sheet-title">
+              פעולות על ההודעה
+            </p>
+            <div className="message-action-sheet-actions">
+              <button type="button" className="message-action-primary" onClick={confirmReplyFromSheet}>
+                תגובה
+              </button>
+              <button type="button" className="message-action-secondary" onClick={copyMessageFromSheet}>
+                העתקה
+              </button>
+            </div>
+            <button type="button" className="message-action-cancel" onClick={closeMessageActionSheet}>
+              ביטול
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {expandedImage && (
         <div

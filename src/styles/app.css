@@ -488,6 +488,78 @@ button.reply-cancel-btn {
   margin-top: 0.8rem;
 }
 
+.message-action-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
+  z-index: 1050;
+}
+
+.message-action-sheet {
+  width: min(320px, calc(100vw - 2rem));
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(17, 24, 39, 0.96);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+  padding: 1rem 1rem 0.75rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.message-action-sheet-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  text-align: center;
+}
+
+.message-action-sheet-actions {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.message-action-primary,
+.message-action-secondary {
+  margin: 0;
+  width: 100%;
+  border-radius: 10px;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.message-action-primary {
+  color: #eef2ff;
+  background: rgba(79, 70, 229, 0.45);
+  border-color: rgba(165, 180, 252, 0.45);
+}
+
+.message-action-secondary {
+  color: #e5e7eb;
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+.message-action-cancel {
+  margin: 0;
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  padding: 0.5rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #94a3b8;
+  background: transparent;
+  cursor: pointer;
+}
+
 .image-lightbox {
   position: fixed;
   inset: 0;
