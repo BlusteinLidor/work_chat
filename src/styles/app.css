@@ -275,6 +275,30 @@ button:disabled {
   gap: 0.6rem;
 }
 
+.replying-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border: 1px solid rgba(165, 180, 252, 0.45);
+  border-radius: 10px;
+  padding: 0.4rem 0.6rem;
+  background: rgba(67, 56, 202, 0.18);
+  color: #e0e7ff;
+}
+
+.replying-banner span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.replying-banner .text-button {
+  margin: 0;
+  padding: 0.2rem 0.4rem;
+  flex-shrink: 0;
+}
+
 .chat-form-top {
   display: flex;
   gap: 0.6rem;

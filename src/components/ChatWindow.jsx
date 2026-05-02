@@ -15,14 +15,20 @@ const getSenderColorClass = (userId) => {
 }
 
 function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
+  const LONG_PRESS_MS = 450
+  const REPLY_PREVIEW_MAX_LENGTH = 60
   const [draft, setDraft] = useState('')
   const [sendingMessage, setSendingMessage] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [uploadError, setUploadError] = useState('')
   const [expandedImage, setExpandedImage] = useState(null)
+  const [replyingTo, setReplyingTo] = useState(null)
   const [isNearBottom, setIsNearBottom] = useState(true)
   const [showJumpToLatest, setShowJumpToLatest] = useState(false)
   const messagesRef = useRef(null)
+  const draftInputRef = useRef(null)
+  const longPressTimerRef = useRef(null)
+  const longPressTargetMessageIdRef = useRef(null)
   const previousMessageCountRef = useRef(0)
   const initialScrollDoneRef = useRef(false)
 
@@ -86,10 +92,53 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
     }
   }, [expandedImage])
 
+  useEffect(
+    () => () => {
+      if (longPressTimerRef.current) window.clearTimeout(longPressTimerRef.current)
+    },
+    [],
+  )
+
   const handleMessagesScroll = () => {
     const nearBottom = checkNearBottom()
     setIsNearBottom(nearBottom)
     if (nearBottom) setShowJumpToLatest(false)
+  }
+
+  const formatReplyPrefix = (target) => {
+    if (!target) return ''
+    const excerpt =
+      target.preview.length > REPLY_PREVIEW_MAX_LENGTH
+        ? `${target.preview.slice(0, REPLY_PREVIEW_MAX_LENGTH)}...`
+        : target.preview
+    return `↪ תגובה ל${target.displayName}: "${excerpt}"`
+  }
+
+  const clearLongPressTimer = () => {
+    if (!longPressTimerRef.current) return
+    window.clearTimeout(longPressTimerRef.current)
+    longPressTimerRef.current = null
+  }
+
+  const beginLongPress = (event, message, displayName) => {
+    if (event.target.closest('.message-image-button')) return
+    clearLongPressTimer()
+    longPressTargetMessageIdRef.current = message.id
+    const previewSource = message.content?.trim() || (message.image_url ? 'תמונה' : 'הודעה')
+    longPressTimerRef.current = window.setTimeout(() => {
+      setReplyingTo({
+        id: message.id,
+        displayName,
+        preview: previewSource,
+      })
+      draftInputRef.current?.focus()
+    }, LONG_PRESS_MS)
+  }
+
+  const endLongPress = (messageId) => {
+    if (longPressTargetMessageIdRef.current !== messageId) return
+    clearLongPressTimer()
+    longPressTargetMessageIdRef.current = null
   }
 
   const send = async (event) => {
@@ -97,10 +146,13 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
     const text = draft.trim()
     if (!text || sendingMessage) return
 
+    const replyPrefix = formatReplyPrefix(replyingTo)
+    const composedContent = replyPrefix ? `${replyPrefix}\n${text}` : text
     setDraft('')
     setSendingMessage(true)
     try {
-      await onSendMessage({ content: text })
+      await onSendMessage({ content: composedContent })
+      setReplyingTo(null)
     } catch (error) {
       setDraft(text)
       setUploadError(error instanceof Error ? error.message : 'שליחת ההודעה נכשלה.')
@@ -134,7 +186,9 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
       }
 
       const { data } = supabase.storage.from('chat-images').getPublicUrl(filePath)
-      await onSendMessage({ content: '', imageUrl: data.publicUrl, hasImage: true })
+      const replyPrefix = formatReplyPrefix(replyingTo)
+      await onSendMessage({ content: replyPrefix, imageUrl: data.publicUrl, hasImage: true })
+      setReplyingTo(null)
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : 'העלאת התמונה נכשלה.')
     } finally {
@@ -158,6 +212,12 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
             <article
               key={message.id}
               className={mine ? 'message-row mine' : `message-row ${senderColorClass}`}
+              onPointerDown={(event) =>
+                beginLongPress(event, message, profile?.display_name || 'משתמש לא מוכר')
+              }
+              onPointerUp={() => endLongPress(message.id)}
+              onPointerCancel={() => endLongPress(message.id)}
+              onPointerLeave={() => endLongPress(message.id)}
             >
               <header>
                 <strong>{profile?.display_name || 'משתמש לא מוכר'}</strong>
@@ -185,8 +245,17 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
       ) : null}
 
       <form className="chat-form" onSubmit={send}>
+        {replyingTo ? (
+          <div className="replying-banner" role="status">
+            <span>{formatReplyPrefix(replyingTo)}</span>
+            <button type="button" className="text-button" onClick={() => setReplyingTo(null)}>
+              ביטול
+            </button>
+          </div>
+        ) : null}
         <div className="chat-form-top">
           <input
+            ref={draftInputRef}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             placeholder="כתבו הודעה..."
