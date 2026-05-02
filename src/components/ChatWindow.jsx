@@ -19,6 +19,7 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
   const [sendingMessage, setSendingMessage] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [uploadError, setUploadError] = useState('')
+  const [expandedImage, setExpandedImage] = useState(null)
   const [isNearBottom, setIsNearBottom] = useState(true)
   const [showJumpToLatest, setShowJumpToLatest] = useState(false)
   const messagesRef = useRef(null)
@@ -67,6 +68,23 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
 
     setShowJumpToLatest(true)
   }, [sortedMessages, isNearBottom])
+
+  useEffect(() => {
+    if (!expandedImage) return undefined
+
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setExpandedImage(null)
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = originalOverflow
+    }
+  }, [expandedImage])
 
   const handleMessagesScroll = () => {
     const nearBottom = checkNearBottom()
@@ -147,7 +165,14 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
               </header>
               {message.content ? <p>{message.content}</p> : null}
               {message.image_url ? (
-                <img className="message-image" src={message.image_url} alt="תמונה שהועלתה לצ׳אט" />
+                <button
+                  type="button"
+                  className="message-image-button"
+                  onClick={() => setExpandedImage(message.image_url)}
+                  aria-label="הגדלת התמונה"
+                >
+                  <img className="message-image" src={message.image_url} alt="תמונה שהועלתה לצ׳אט" />
+                </button>
               ) : null}
             </article>
           )
@@ -183,6 +208,27 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
         </button>
       </form>
       {uploadError ? <p className="error">{uploadError}</p> : null}
+
+      {expandedImage && (
+        <div
+          className="image-lightbox"
+          role="dialog"
+          aria-modal="true"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setExpandedImage(null)
+          }}
+        >
+          <button
+            type="button"
+            className="image-lightbox-close"
+            onClick={() => setExpandedImage(null)}
+            aria-label="סגירה"
+          >
+            X
+          </button>
+          <img className="image-lightbox-image" src={expandedImage} alt="תמונה מוגדלת מהצ׳אט" />
+        </div>
+      )}
     </section>
   )
 }
