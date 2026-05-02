@@ -41,6 +41,8 @@ const getMessageCopyText = (message) => {
 
 function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
   const LONG_PRESS_MS = 450
+  /** Cancel long-press if the finger moves farther than this (scroll vs hold). */
+  const LONG_PRESS_MOVE_CANCEL_PX = 12
   const REPLY_PREVIEW_MAX_LENGTH = 60
   const [draft, setDraft] = useState('')
   const [sendingMessage, setSendingMessage] = useState(false)
@@ -55,6 +57,7 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
   const draftInputRef = useRef(null)
   const longPressTimerRef = useRef(null)
   const longPressTargetMessageIdRef = useRef(null)
+  const longPressTrackingCleanupRef = useRef(null)
   const previousMessageCountRef = useRef(0)
   const initialScrollDoneRef = useRef(false)
 
@@ -121,6 +124,8 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
   useEffect(
     () => () => {
       if (longPressTimerRef.current) window.clearTimeout(longPressTimerRef.current)
+      longPressTrackingCleanupRef.current?.()
+      longPressTrackingCleanupRef.current = null
     },
     [],
   )
@@ -143,12 +148,6 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
     }
   }, [messageActionTarget])
 
-  const handleMessagesScroll = () => {
-    const nearBottom = checkNearBottom()
-    setIsNearBottom(nearBottom)
-    if (nearBottom) setShowJumpToLatest(false)
-  }
-
   const formatReplyPrefix = (target) => {
     if (!target) return ''
     const excerpt =
@@ -164,20 +163,66 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
     longPressTimerRef.current = null
   }
 
-  const beginLongPress = (event, message, displayName) => {
-    if (event.target.closest('.message-image-button')) return
-    clearLongPressTimer()
-    longPressTargetMessageIdRef.current = message.id
-    const previewSource = message.content?.trim() || (message.image_url ? 'תמונה' : 'הודעה')
-    longPressTimerRef.current = window.setTimeout(() => {
-      setMessageActionTarget({ message, displayName })
-    }, LONG_PRESS_MS)
+  const clearLongPressTracking = () => {
+    longPressTrackingCleanupRef.current?.()
+    longPressTrackingCleanupRef.current = null
   }
 
   const endLongPress = (messageId) => {
     if (longPressTargetMessageIdRef.current !== messageId) return
     clearLongPressTimer()
     longPressTargetMessageIdRef.current = null
+    clearLongPressTracking()
+  }
+
+  const beginLongPress = (event, message, displayName) => {
+    if (event.target.closest('.message-image-button')) return
+    clearLongPressTracking()
+    clearLongPressTimer()
+    longPressTargetMessageIdRef.current = message.id
+
+    const startX = event.clientX
+    const startY = event.clientY
+    const cancelPx2 = LONG_PRESS_MOVE_CANCEL_PX * LONG_PRESS_MOVE_CANCEL_PX
+
+    const onMove = (e) => {
+      const dx = e.clientX - startX
+      const dy = e.clientY - startY
+      if (dx * dx + dy * dy > cancelPx2) {
+        endLongPress(message.id)
+      }
+    }
+
+    const onPointerEnd = () => {
+      endLongPress(message.id)
+    }
+
+    longPressTrackingCleanupRef.current = () => {
+      window.removeEventListener('pointermove', onMove, true)
+      window.removeEventListener('pointerup', onPointerEnd, true)
+      window.removeEventListener('pointercancel', onPointerEnd, true)
+    }
+
+    window.addEventListener('pointermove', onMove, true)
+    window.addEventListener('pointerup', onPointerEnd, true)
+    window.addEventListener('pointercancel', onPointerEnd, true)
+
+    longPressTimerRef.current = window.setTimeout(() => {
+      clearLongPressTracking()
+      clearLongPressTimer()
+      longPressTargetMessageIdRef.current = null
+      setMessageActionTarget({ message, displayName })
+    }, LONG_PRESS_MS)
+  }
+
+  const handleMessagesScroll = () => {
+    const pendingLongPressId = longPressTargetMessageIdRef.current
+    if (pendingLongPressId != null && longPressTimerRef.current) {
+      endLongPress(pendingLongPressId)
+    }
+    const nearBottom = checkNearBottom()
+    setIsNearBottom(nearBottom)
+    if (nearBottom) setShowJumpToLatest(false)
   }
 
   const blockMessageContextMenu = (event) => {
