@@ -14,6 +14,18 @@ const getSenderColorClass = (userId) => {
   return `sender-color-${normalized + 1}`
 }
 
+const REPLY_PREFIX_REGEX = /^↪ תגובה ל(.+?): "([\s\S]*)"(?:\n([\s\S]*))?$/
+
+const parseReplyContent = (content) => {
+  if (!content) return { replyTo: null, body: '' }
+  const match = content.match(REPLY_PREFIX_REGEX)
+  if (!match) return { replyTo: null, body: content }
+  return {
+    replyTo: { displayName: match[1], excerpt: match[2] },
+    body: match[3] || '',
+  }
+}
+
 function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
   const LONG_PRESS_MS = 450
   const REPLY_PREVIEW_MAX_LENGTH = 60
@@ -208,6 +220,7 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
           const profile = profilesById.get(message.user_id)
           const mine = message.user_id === currentUserId
           const senderColorClass = mine ? '' : getSenderColorClass(message.user_id)
+          const parsedContent = parseReplyContent(message.content)
           return (
             <article
               key={message.id}
@@ -218,12 +231,19 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
               onPointerUp={() => endLongPress(message.id)}
               onPointerCancel={() => endLongPress(message.id)}
               onPointerLeave={() => endLongPress(message.id)}
+              onContextMenu={(event) => event.preventDefault()}
             >
               <header>
                 <strong>{profile?.display_name || 'משתמש לא מוכר'}</strong>
                 <small>{new Date(message.created_at).toLocaleTimeString()}</small>
               </header>
-              {message.content ? <p>{message.content}</p> : null}
+              {parsedContent.replyTo ? (
+                <div className="reply-reference" aria-label="תגובה להודעה">
+                  <strong>תגובה ל{parsedContent.replyTo.displayName}</strong>
+                  <span>{parsedContent.replyTo.excerpt}</span>
+                </div>
+              ) : null}
+              {parsedContent.body ? <p>{parsedContent.body}</p> : null}
               {message.image_url ? (
                 <button
                   type="button"

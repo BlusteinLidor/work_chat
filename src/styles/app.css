@@ -280,6 +280,7 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  min-width: 0;
   border: 1px solid rgba(165, 180, 252, 0.45);
   border-radius: 10px;
   padding: 0.4rem 0.6rem;
@@ -288,15 +289,39 @@ button:disabled {
 }
 
 .replying-banner span {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .replying-banner .text-button {
   margin: 0;
   padding: 0.2rem 0.4rem;
   flex-shrink: 0;
+}
+
+.reply-reference {
+  margin-top: 0.35rem;
+  padding: 0.35rem 0.5rem;
+  border-inline-start: 3px solid rgba(165, 180, 252, 0.7);
+  background: rgba(15, 23, 42, 0.45);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.reply-reference strong {
+  font-size: 0.82rem;
+  color: #c7d2fe;
+}
+
+.reply-reference span {
+  font-size: 0.84rem;
+  color: #cbd5e1;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .chat-form-top {
