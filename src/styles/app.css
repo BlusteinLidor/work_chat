@@ -242,6 +242,10 @@ button:disabled {
   gap: 0.55rem;
   padding-right: 0.35rem;
   padding-left: 0.35rem;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
 }
 
 .message-row {
@@ -249,6 +253,9 @@ button:disabled {
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 10px;
   padding: 0.55rem 0.65rem;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .message-row.mine {
@@ -296,10 +303,19 @@ button:disabled {
   word-break: break-word;
 }
 
-.replying-banner .text-button {
+button.reply-cancel-btn {
   margin: 0;
-  padding: 0.2rem 0.4rem;
   flex-shrink: 0;
+  align-self: center;
+  min-height: 2rem;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #c7d2fe;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(165, 180, 252, 0.35);
+  border-radius: 8px;
 }
 
 .reply-reference {
@@ -374,6 +390,8 @@ button:disabled {
   border: 1px solid rgba(148, 163, 184, 0.35);
   display: block;
   cursor: zoom-in;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
 }
 
 .message-image-button {
@@ -595,7 +613,7 @@ button:disabled {
     min-width: 0;
   }
 
-  .chat-form button {
+  .chat-form .send-button {
     width: 100%;
     text-align: center;
   }

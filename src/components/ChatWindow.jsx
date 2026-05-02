@@ -153,6 +153,11 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
     longPressTargetMessageIdRef.current = null
   }
 
+  const blockMessageContextMenu = (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+  }
+
   const send = async (event) => {
     event.preventDefault()
     const text = draft.trim()
@@ -212,7 +217,12 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
     <section className="card chat-window">
       <h2>צ׳אט קבוצתי</h2>
 
-      <div className="messages" ref={messagesRef} onScroll={handleMessagesScroll}>
+      <div
+        className="messages"
+        ref={messagesRef}
+        onScroll={handleMessagesScroll}
+        onContextMenuCapture={blockMessageContextMenu}
+      >
         {sortedMessages.length === 0 && (
           <p className="muted">אין הודעות עדיין. תהיו הראשונים להגיד שלום.</p>
         )}
@@ -231,7 +241,7 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
               onPointerUp={() => endLongPress(message.id)}
               onPointerCancel={() => endLongPress(message.id)}
               onPointerLeave={() => endLongPress(message.id)}
-              onContextMenu={(event) => event.preventDefault()}
+              onContextMenuCapture={blockMessageContextMenu}
             >
               <header>
                 <strong>{profile?.display_name || 'משתמש לא מוכר'}</strong>
@@ -249,9 +259,15 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
                   type="button"
                   className="message-image-button"
                   onClick={() => setExpandedImage(message.image_url)}
+                  onContextMenuCapture={blockMessageContextMenu}
                   aria-label="הגדלת התמונה"
                 >
-                  <img className="message-image" src={message.image_url} alt="תמונה שהועלתה לצ׳אט" />
+                  <img
+                    className="message-image"
+                    src={message.image_url}
+                    alt="תמונה שהועלתה לצ׳אט"
+                    draggable={false}
+                  />
                 </button>
               ) : null}
             </article>
@@ -268,7 +284,7 @@ function ChatWindow({ messages, profilesById, currentUserId, onSendMessage }) {
         {replyingTo ? (
           <div className="replying-banner" role="status">
             <span>{formatReplyPrefix(replyingTo)}</span>
-            <button type="button" className="text-button" onClick={() => setReplyingTo(null)}>
+            <button type="button" className="reply-cancel-btn" onClick={() => setReplyingTo(null)}>
               ביטול
             </button>
           </div>
